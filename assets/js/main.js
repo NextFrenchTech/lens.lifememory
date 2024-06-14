@@ -936,3 +936,48 @@ var main = (function($) { var _ = {
 
 		// Définir l'intervalle pour changer de photo toutes les 5 secondes (5000 ms)
 		setInterval(nextPhoto, 5000);
+
+
+
+/* autoView */
+
+	// autoView /Full|Device
+
+		// Fonction pour passer à la video suivante
+		document.addEventListener('DOMContentLoaded', function() {
+			var videoPlayer = document.getElementById('videoPlayer');
+
+			// Liste des vidéos
+			var videos = [
+				{ src: 'videos/vid04.mp4' },
+				{ src: 'videos/vid05.mp4' },
+				//{ src: 'videos/.mp4', poster: 'images/.jpg' },
+			];
+
+			var currentVideoIndex = 0;
+
+			// Fonction pour charger une vidéo
+			function loadVideo(index) {
+				if (index < videos.length) {
+					videoPlayer.src = videos[index].src;
+					//videoPlayer.poster = videos[index].poster;
+					videoPlayer.load();
+					videoPlayer.play();
+				}
+			}
+
+			// Écouteur d'événement pour la fin de la vidéo
+			videoPlayer.addEventListener('ended', function() {
+				currentVideoIndex++;
+				if (currentVideoIndex < videos.length) {
+					loadVideo(currentVideoIndex);
+				} else {
+					// Réinitialiser à la première vidéo si toutes les vidéos sont jouées
+					currentVideoIndex = 0;
+					loadVideo(currentVideoIndex);
+				}
+			});
+
+			// Charger la première vidéo
+			loadVideo(currentVideoIndex);
+		});

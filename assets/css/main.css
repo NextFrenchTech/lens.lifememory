@@ -1474,8 +1474,9 @@ input, select, textarea {
 
 /* Video */
 
-/*	.video {
-/*	}
+	video {
+		max-width: 100%;
+	}
 
 
 
