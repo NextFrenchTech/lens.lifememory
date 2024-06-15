@@ -1395,12 +1395,12 @@ input, select, textarea {
 		margin: 0 10px 25px 10px;
 	}
 
-	#acceptButton {
+	#acceptButton, #resumeButton {
 		background-color: transparent;
 		color: whitesmoke;
 	}
 
-	#rejectButton {
+	#rejectButton, #cancelButton {
 		background-color: transparent;
 		color: whitesmoke;
 	}

@@ -767,83 +767,113 @@ var main = (function($) { var _ = {
 
 	// autoPlayAudio
 
-		document.addEventListener("DOMContentLoaded", function() {
-			var popup = document.getElementById("popup");
-			var acceptButton = document.getElementById("acceptButton");
-			var rejectButton = document.getElementById("rejectButton");
-			var audio = document.getElementById("audio");
-
-			// Vérifier si l'utilisateur a déjà répondu
-			var userResponse = getCookie("userResponse");
-
-			if (userResponse === "accepted") {
-				// Si l'utilisateur a déjà répondu "accepté", masquer la pop-up et afficher l'audio
-				popup.style.display = "none";
-			//audio.style.display = "block"; // Afficher l'audio
-				audio.play(); // Démarrer la lecture audio
-			} else if (userResponse === "rejected") {
-				// Si l'utilisateur a déjà répondu "rejeté", masquer la pop-up
-				popup.style.display = "none";
-			} else {
-				// Afficher la fenêtre pop-up après 1 seconde si l'utilisateur n'a pas encore répondu
-				setTimeout(function() {
-					popup.style.display = "block";
+		// L'événement DOMContentLoaded est déclenché lorsque le document HTML a été complètement chargé et analysé
+		document.addEventListener("DOMContentLoaded", () => {
+			// Variables
+			const popup = document.getElementById("popup");
+			const acceptButton = document.getElementById("acceptButton");
+			const rejectButton = document.getElementById("rejectButton");
+			const popupPursue = document.getElementById("popupPursue");
+			const resumeButton = document.getElementById("resumeButton");
+			const cancelButton = document.getElementById("cancelButton");
+			const audio = document.getElementById("audio");
+			let isAudioPlaying = false;
+		
+			// Functions
+		
+			// Fonction pour afficher une popup avec un délai
+			const showPopup = (popupElement) => {
+				setTimeout(() => {
+					popupElement.style.display = "block";
 				}, 1000);
-			}
-
-			// Gérer la réponse de l'utilisateur
-			acceptButton.addEventListener("click", function() {
+			};
+		
+			// Fonction pour démarrer la lecture audio
+			const playAudio = () => {
+				isAudioPlaying = true;
+				audio.play().catch(error => console.error("Audio play error: ", error));
+			};
+		
+			// Fonction pour gérer la réponse de l'utilisateur à la proposition
+			const handleUserResponse = (response) => {
+				sessionStorage.setItem("userResponse", response);
 				popup.style.display = "none";
-			//audio.style.display = "block"; // Afficher l'audio
-				audio.play(); // Démarrer la lecture audio
-				setCookie("userResponse", "accepted"); // Enregistrer la réponse dans un cookie de session
-			});
-
-			rejectButton.addEventListener("click", function() {
-				popup.style.display = "none";
-				setCookie("userResponse", "rejected"); // Enregistrer la réponse dans un cookie de session
-			});
-
-			// Fonction pour définir un cookie de session
-			function setCookie(name, value) {
-				document.cookie = name + "=" + value + ";path=/;SameSite=Lax;Secure";
-			}
-
-			// Fonction pour récupérer la valeur d'un cookie
-			function getCookie(name) {
-				const cookieName = name + "=";
-				const cookies = document.cookie.split(';');
-				const cookie = cookies.find(c => c.trim().startsWith(cookieName));
-				return cookie ? cookie.trim().substring(cookieName.length) : "";
-			}
-		});
-
-		// Fonction pour passer à la piste audio suivante
-		function playNext() {
-			const audio = document.getElementById('audio');
-			const sources = audio.getElementsByTagName('source');
-
-			// Recherche de la source actuelle
-			let currentSourceIndex = -1;
-			for (let i = 0; i < sources.length; i++) {
-				if (sources[i].src === audio.src) {
-					currentSourceIndex = i;
-					break;
+				if (response === "accepted") {
+					playAudio(); // Si la réponse est "accepted", démarrer la lecture audio
 				}
-			}
-
-			// Calcul de l'index de la source suivante
-			const nextSourceIndex = (currentSourceIndex + 1) % sources.length;
-
-			// Mise à jour de la source audio et lecture
-			audio.src = sources[nextSourceIndex].src;
-			audio.load(); // Recharge le lecteur audio pour prendre en compte la nouvelle source
-			audio.play(); // Lance la lecture de la nouvelle source
-		}
-
-		// Lancer la première piste audio
-		document.addEventListener("DOMContentLoaded", function() {
-			playNext();
+			};
+		
+			// Fonction pour reprendre la lecture audio
+			const handleResume = () => {
+				popupPursue.style.display = "none";
+				playAudio(); // Reprendre la lecture audio
+			};
+		
+			// Fonction pour annuler la reprise et réinitialiser la playlist audio
+			const handleCancel = () => {
+				popupPursue.style.display = "none";
+				sessionStorage.setItem("userResponse", "rejected");
+				resetPlaylist(); // Réinitialiser la playlist audio
+			};
+		
+			// Fonction pour réinitialiser la playlist audio
+			const resetPlaylist = () => {
+				const sources = audio.getElementsByTagName('source');
+				if (sources.length > 0) {
+					audio.src = sources[0].src;
+					audio.load();
+				}
+			};
+		
+			// Fonction pour passer à la piste audio suivante dans la playlist
+			const playNext = () => {
+				const sources = Array.from(audio.getElementsByTagName('source'));
+				const currentSourceIndex = sources.findIndex(src => src.src === audio.src);
+				const nextSourceIndex = (currentSourceIndex + 1) % sources.length;
+		
+				audio.src = sources[nextSourceIndex].src;
+				audio.load();
+				playAudio(); // Démarrer la lecture audio de la piste suivante
+			};
+		
+			// Gestionnaires d'événements
+		
+			// Ajouter des écouteurs d'événements pour les différents boutons
+			acceptButton.addEventListener("click", () => handleUserResponse("accepted"));
+			rejectButton.addEventListener("click", () => {
+				handleUserResponse("rejected");
+				resetPlaylist(); // Réinitialiser la playlist audio si la proposition est rejetée
+			});
+			resumeButton.addEventListener("click", handleResume);
+			cancelButton.addEventListener("click", handleCancel);
+		
+			// Gestion de la lecture audio lors de la perte de focus de la fenêtre
+			window.addEventListener("blur", () => {
+				isAudioPlaying = !audio.paused;
+				audio.pause();
+			});
+		
+			// Gestion de l'affichage des popups lors du regain de focus de la fenêtre
+			window.addEventListener("focus", () => {
+				const userResponseOnFocus = sessionStorage.getItem("userResponse");
+				if (!userResponseOnFocus && popup.style.display !== "block") {
+					showPopup(popup); // Afficher la popup initiale si aucune réponse précédente n'est enregistrée et si la popup n'est pas déjà affichée
+				} else if (userResponseOnFocus === "accepted") {
+					showPopup(popupPursue); // Afficher la popup de reprise si la réponse précédente est "accepted"
+				} else if (userResponseOnFocus === "rejected") {
+					showPopup(popup); // Afficher la popup initiale si la réponse précédente est "rejected"
+				}
+			});
+		
+			// Gestion de la lecture de la piste audio suivante à la fin de la piste actuelle
+			audio.addEventListener("ended", playNext);
+		
+			// Initialisation
+		
+			// Réinitialiser la réponse de l'utilisateur à chaque chargement de page
+			sessionStorage.removeItem("userResponse");
+			// Afficher toujours la popup initiale au chargement de la page
+			showPopup(popup);
 		});
 
 
@@ -851,65 +881,75 @@ var main = (function($) { var _ = {
 /* autoScroll */
 
 	// autoScroll /Mobi|Android/i
-		// L400 Fonction pour détecter si l'utilisateur est sur un appareil mobile
 
-		let isPaused = false; // Variable pour suivre l'état de la pause du défilement
+       	// L756. Fonction pour détecter si l'utilisateur est sur un appareil mobile
 
-		// Fonction pour démarrer le gestionnaire d'événement de défilement
-		function startAutoScroll() {
-			let scrollStep = 1; // Nombre de pixels à faire défiler par intervalle
-			let delay = 15; // Intervalle en millisecondes entre chaque défilement
-
+        // Constantes pour les valeurs configurables
+        const SCROLL_STEP = 1; // Nombre de pixels à faire défiler par intervalle
+        const DELAY = 15; // Intervalle en millisecondes entre chaque défilement
+        const TOUCH_SENSITIVITY = 10; // Sensibilité du mouvement de doigt
 		const mainDiv = document.getElementById('main');
 
-		if (isMobile() && mainDiv) {
-			// Défilement vertical pour les appareils mobiles
-			function scrollDown() {
-				if (!isPaused) {
-					mainDiv.scrollBy(0, scrollStep);
-					if ((mainDiv.scrollHeight - mainDiv.scrollTop) <= mainDiv.clientHeight) {
-						setTimeout(scrollUp, delay);
-					} else {
-						setTimeout(scrollDown, delay);
-					}
-				}
-			}
-	
-			function scrollUp() {
-				if (!isPaused) {
-					mainDiv.scrollBy(0, -scrollStep);
-					if (mainDiv.scrollTop <= 0) {
-						setTimeout(scrollDown, delay);
-					} else {
-						setTimeout(scrollUp, delay);
-					}
-				}
-			}
-	
-			scrollDown();
+        let isPaused = false; // Variable pour suivre l'état de la pause du défilement
 
-				let touchStartY = 0;
+        // Fonction pour démarrer le gestionnaire d'événement de défilement
+        function startAutoScroll() {
+            if (isMobile() && mainDiv) {
+                // Défilement vertical pour les appareils mobiles
+                function scrollDown() {
+                    if (!isPaused) {
+                        mainDiv.scrollBy(0, SCROLL_STEP); // Fait défiler la fenêtre vers le bas
+                        // Vérifie si la fenêtre a atteint le bas de la page
+						if ((mainDiv.scrollHeight - mainDiv.scrollTop) <= mainDiv.clientHeight) {
+                            setTimeout(scrollUp, DELAY); // Si le bas de la page est atteint, défile vers le haut
+                        } else {
+                            setTimeout(scrollDown, DELAY); // Sinon, continue de défiler vers le bas
+                        }
+                    }
+                }
 
-				// Gestion des événements tactiles
-				window.addEventListener('touchstart', function(event) {
-					touchStartY = event.touches[0].clientY;
-				});
+                function scrollUp() {
+                    if (!isPaused) {
+                        mainDiv.scrollBy(0, -SCROLL_STEP); // Fait défiler la fenêtre vers le haut
+                        // Vérifie si la fenêtre a atteint le haut de la page
+                        if (mainDiv.scrollY <= 0) {
+                            setTimeout(scrollDown, DELAY); // Si le haut de la page est atteint, défile vers le bas
+                        } else {
+                            setTimeout(scrollUp, DELAY); // Sinon, continue de défiler vers le haut
+                        }
+                    }
+                }
 
-				// Gestion de la mise en pause du défilement
-				window.addEventListener('touchmove', function(event) {
-					let touchMoveY = event.touches[0].clientY;
-					let deltaY = touchMoveY - touchStartY;
+                scrollDown(); // Démarre le défilement vers le bas
 
-					if (Math.abs(deltaY) > 10) { // Sensibilité du mouvement de doigt
-						isPaused = true;// Empêche le défilement naturel
-					}
-				});
-			}
-		}
+                let touchStartY = 0;
 
-		// Fonction pour démarrer le défilement au click
-		document.getElementById('acceptButton').addEventListener('click', startAutoScroll);
-		document.getElementById('rejectButton').addEventListener('click', startAutoScroll);
+                // Gestion des événements tactiles
+                window.addEventListener('touchstart', function(event) {
+                    touchStartY = event.touches[0].clientY; // Enregistre la position de départ du toucher
+                });
+
+                // Gestion de la mise en pause du défilement
+                window.addEventListener('touchmove', function(event) {
+                    let touchMoveY = event.touches[0].clientY; // Récupère la position actuelle du toucher
+                    let deltaY = touchMoveY - touchStartY; // Calcule le déplacement en y
+
+                    if (Math.abs(deltaY) > TOUCH_SENSITIVITY) { // Vérifie si le déplacement dépasse la sensibilité
+                        isPaused = true; // Met en pause le défilement
+                    }
+                });
+            }
+        }
+
+        // Fonction pour démarrer le défilement au clic
+        function startAutoScrollOnClick() {
+            startAutoScroll(); // Démarre le défilement automatique
+            isPaused = false; // Réinitialiser l'état de la pause
+        }
+
+        // Ajout de l'événement de démarrage du défilement automatique aux boutons
+        document.getElementById('acceptButton').addEventListener('click', startAutoScrollOnClick);
+        document.getElementById('rejectButton').addEventListener('click', startAutoScrollOnClick);
 
 		// Fonction pour démarrer le défilement automatique
 		//window.onload = function() {
@@ -921,21 +961,25 @@ var main = (function($) { var _ = {
 /* autoSwitch */
 
 	// autoSwitch /Mobi|Android/i
-		// L400 Fonction pour détecter si l'utilisateur est sur un appareil mobile
+	
+		// L756. Fonction pour détecter si l'utilisateur est sur un appareil mobile
 
 		// Fonction pour passer à la photo suivante
 		function nextPhoto() {
-			if (isMobile() && $('body').hasClass('fullscreen')) {
+			if (isMobile() && document.body.classList.contains('fullscreen')) {
 				// Simuler un clic sur le bouton "suivant" de Poptrox
-				var nextButton = $('.nav-next');
-				if (nextButton.length) {
+				var nextButton = document.querySelector('.nav-next');
+				if (nextButton) {
 					nextButton.click();
 				}
 			}
+			
+			// Appel récursif pour exécuter la fonction après 5 secondes
+			setTimeout(nextPhoto, 5000);
 		}
 
-		// Définir l'intervalle pour changer de photo toutes les 5 secondes (5000 ms)
-		setInterval(nextPhoto, 5000);
+		// Appel initial de la fonction nextPhoto
+		nextPhoto();
 
 
 
