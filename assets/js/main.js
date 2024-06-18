@@ -985,11 +985,55 @@ var main = (function($) { var _ = {
 
 /* autoView */
 
-	// autoView /Full|Device
+	// autoView /videoPlayer05
 
 		// Fonction pour passer à la video suivante
 		document.addEventListener('DOMContentLoaded', function() {
-			var videoPlayer = document.getElementById('videoPlayer');
+			var videoPlayer05 = document.getElementById('videoPlayer05');
+
+			// Liste des vidéos
+			var videos = [
+				{ src: 'videos/vid05.mp4' },
+				//{ src: 'videos/.mp4', poster: 'images/.jpg' },
+			];
+
+			var currentVideoIndex = 0;
+
+			// Fonction pour charger une vidéo
+			function loadVideo(index) {
+				if (index < videos.length) {
+					videoPlayer05.src = videos[index].src;
+					//videoPlayer05.poster = videos[index].poster;
+					videoPlayer05.load();
+					videoPlayer05.play();
+				}
+			}
+
+			// Écouteur d'événement pour la fin de la vidéo
+			//videoPlayer05.addEventListener('ended', function() {
+			//	currentVideoIndex++;
+			//	if (currentVideoIndex < videos.length) {
+			//		loadVideo(currentVideoIndex);
+			//	} else {
+			//		// Réinitialiser à la première vidéo si toutes les vidéos sont jouées
+			//		currentVideoIndex = 0;
+			//		loadVideo(currentVideoIndex);
+			//	}
+			//});
+
+			// Charger la première vidéo
+			loadVideo(currentVideoIndex);
+		});
+
+
+
+/* autoView */
+
+	// autoView /videoPlayer04
+
+		// Fonction pour passer à la video suivante
+		document.addEventListener('DOMContentLoaded', function() {
+			var videoPlayer04 = document.getElementById('videoPlayer04');
 
 			// Liste des vidéos
 			var videos = [
@@ -1003,15 +1047,15 @@ var main = (function($) { var _ = {
 			// Fonction pour charger une vidéo
 			function loadVideo(index) {
 				if (index < videos.length) {
-					videoPlayer.src = videos[index].src;
-					//videoPlayer.poster = videos[index].poster;
-					videoPlayer.load();
-					videoPlayer.play();
+					videoPlayer04.src = videos[index].src;
+					//videoPlayer04.poster = videos[index].poster;
+					videoPlayer04.load();
+					videoPlayer04.play();
 				}
 			}
 
 			// Écouteur d'événement pour la fin de la vidéo
-			videoPlayer.addEventListener('ended', function() {
+			videoPlayer04.addEventListener('ended', function() {
 				currentVideoIndex++;
 				if (currentVideoIndex < videos.length) {
 					loadVideo(currentVideoIndex);
