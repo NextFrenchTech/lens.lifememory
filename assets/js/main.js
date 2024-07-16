@@ -886,7 +886,7 @@ var main = (function($) { var _ = {
 
         // Constantes pour les valeurs configurables
         const SCROLL_STEP = 1; // Nombre de pixels à faire défiler par intervalle
-        const DELAY = 65; // Intervalle en millisecondes entre chaque défilement
+        const DELAY = 75; // Intervalle en millisecondes entre chaque défilement
         const TOUCH_SENSITIVITY = 10; // Sensibilité du mouvement de doigt
 		const mainDiv = document.getElementById('main');
 
